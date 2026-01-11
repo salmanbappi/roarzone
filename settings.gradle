@@ -1,0 +1,3 @@
+include(":app")
+include(":core")
+project(":core").projectDir = file("../aniyomi-extensions-source/core")
