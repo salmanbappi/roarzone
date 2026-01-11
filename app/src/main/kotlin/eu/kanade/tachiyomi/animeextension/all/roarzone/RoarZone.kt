@@ -281,6 +281,7 @@ class RoarZone : Source(), UnmeteredSource, ConfigurableAnimeSource {
 
     // Dynamic Filters
     private var categoriesCache: List<Pair<String, String>>? = null
+    private var genresCache: List<Pair<String, String>>? = null
     
     private fun fetchCategories(): List<Pair<String, String>> {
         if (categoriesCache == null) {
@@ -328,16 +329,96 @@ class RoarZone : Source(), UnmeteredSource, ConfigurableAnimeSource {
         return list
     }
 
+    private fun fetchGenres(): List<Pair<String, String>> {
+        if (genresCache == null) {
+            val cachedJson = prefs.getString("pref_cached_genres", null)
+            if (cachedJson != null) {
+                try {
+                    val list = mutableListOf<Pair<String, String>>()
+                    val array = json.parseToJsonElement(cachedJson).jsonArray
+                    array.forEach { 
+                        val obj = it.jsonObject
+                        val name = obj["name"]!!.jsonPrimitive.content
+                        val id = obj["id"]!!.jsonPrimitive.content
+                        list.add(Pair(name, id))
+                    }
+                    genresCache = list
+                } catch (e: Exception) { e.printStackTrace() }
+            }
+        }
+
+        genresCache?.let { if (it.isNotEmpty()) return it }
+
+        val list = mutableListOf<Pair<String, String>>(Pair("All", ""))
+        try {
+            val url = "$baseUrl/Genres?Recursive=true&IncludeItemTypes=Movie,Series&Limit=100"
+            val resp = client.newCall(GET(url)).execute()
+            if (resp.isSuccessful) {
+                val genres = resp.parseAs<ItemListDto>(json)
+                genres.items.forEach { list.add(Pair(it.name, it.id)) }
+
+                // Persist cache
+                val jsonArray = buildJsonArray {
+                    list.forEach { pair ->
+                        add(buildJsonObject {
+                            put("name", pair.first)
+                            put("id", pair.second)
+                        })
+                    }
+                }
+                prefs.edit().putString("pref_cached_genres", jsonArray.toString()).apply()
+            }
+        } catch (e: Exception) { e.printStackTrace() }
+        genresCache = list
+        return list
+    }
+
     override fun getFilterList(): AnimeFilterList {
         val categories = fetchCategories()
+        val genres = fetchGenres()
         return AnimeFilterList(
+            AnimeFilter.Header("Search query is ignored in filters"),
+            TypeFilter(),
             CategoryFilter(categories),
+            GenreFilter(genres),
             SortFilter()
         )
     }
 
+    override suspend fun getSearchAnime(page: Int, query: String, filters: AnimeFilterList): AnimesPage {
+        val startIndex = (page - 1) * 20
+        val url = getItemsUrl(startIndex).newBuilder().apply {
+            if (query.isNotBlank()) addQueryParameter("SearchTerm", query)
+            filters.forEach { filter ->
+                when (filter) {
+                    is TypeFilter -> setQueryParameter("IncludeItemTypes", filter.toValue())
+                    is CategoryFilter -> if (filter.toValue().isNotBlank()) setQueryParameter("ParentId", filter.toValue())
+                    is GenreFilter -> if (filter.toValue().isNotBlank()) setQueryParameter("GenreIds", filter.toValue())
+                    is SortFilter -> {
+                        setQueryParameter("SortBy", filter.toSortValue())
+                        setQueryParameter("SortOrder", if (filter.isAscending()) "Ascending" else "Descending")
+                    }
+                    else -> {}
+                }
+            }
+        }.build()
+        return parseItemsPage(url, page)
+    }
+
+    private class TypeFilter : AnimeFilter.Select<String>("Type", arrayOf("All", "Movies", "TV Shows")) {
+        fun toValue() = when(state) {
+            1 -> "Movie"
+            2 -> "Series"
+            else -> "Movie,Series"
+        }
+    }
+
     private class CategoryFilter(val categories: List<Pair<String, String>>) : AnimeFilter.Select<String>("Category", categories.map { it.first }.toTypedArray()) {
         fun toValue() = categories[state].second
+    }
+
+    private class GenreFilter(val genres: List<Pair<String, String>>) : AnimeFilter.Select<String>("Genre", genres.map { it.first }.toTypedArray()) {
+        fun toValue() = genres[state].second
     }
 
     private class SortFilter : AnimeFilter.Sort("Sort by", arrayOf("Name", "Date Added", "Premiere Date"), Selection(0, false)) {
