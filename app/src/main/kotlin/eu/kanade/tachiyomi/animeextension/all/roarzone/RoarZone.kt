@@ -114,7 +114,7 @@ object ItemTypeSerializer : KSerializer<ItemType> {
     companion object { private val FORMATTER_DATE_TIME = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.ENGLISH) }
 }
 @Serializable data class LoginDto(val accessToken: String, val sessionInfo: LoginSessionDto) { @Serializable data class LoginSessionDto(val userId: String) }
-@Serializable data class MediaDto(val size: Long? = null, val id: String? = null)
+@Serializable data class MediaDto(val size: Long? = null, val id: String? = null, val container: String? = null, val name: String? = null)
 
 fun Long.formatBytes(): String = when {
     this >= 1_000_000_000L -> "%.2f GB".format(this / 1_000_000_000.0)
@@ -230,8 +230,10 @@ class RoarZone : Source(), UnmeteredSource, ConfigurableAnimeSource {
         val item = client.newCall(GET(episode.url)).await().parseAs<ItemDto>(json)
         val mediaSource = item.mediaSources?.firstOrNull() ?: return emptyList()
         val videoHeaders = Headers.headersOf("Authorization", getAuthHeader(deviceInfo, accessToken))
-        val staticUrl = "$baseUrl/Videos/${item.id}/stream?static=True"
-        return listOf(Video(staticUrl, "Source", staticUrl, headers = videoHeaders))
+        val container = mediaSource.container ?: "mkv"
+        val staticUrl = "$baseUrl/Videos/${item.id}/stream.$container?static=True"
+        val quality = mediaSource.name ?: "Video"
+        return listOf(Video(staticUrl, quality, staticUrl, headers = videoHeaders))
     }
 
     private fun getItemsUrl(startIndex: Int): HttpUrl = "$baseUrl/Users/$userId/Items".toHttpUrl().newBuilder().apply {
