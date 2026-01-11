@@ -68,7 +68,7 @@ object ItemTypeSerializer : KSerializer<ItemType> {
 
 @Serializable data class ItemListDto(val items: List<ItemDto>, val totalRecordCount: Int)
 @Serializable data class ItemDto(
-    val name: String, val type: ItemType, val id: String, val locationType: String, val imageTags: ImageDto,
+    val name: String, val type: ItemType, val id: String, val locationType: String? = null, val imageTags: ImageDto,
     val collectionType: String? = null, val seriesId: String? = null, val seriesName: String? = null,
     val seasonName: String? = null, val seriesPrimaryImageTag: String? = null, val status: String? = null,
     val overview: String? = null, val genres: List<String>? = null, val studios: List<StudioDto>? = null,
