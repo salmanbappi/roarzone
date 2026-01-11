@@ -232,7 +232,7 @@ class RoarZone : Source(), UnmeteredSource, ConfigurableAnimeSource {
         val videoHeaders = Headers.headersOf("Authorization", getAuthHeader(deviceInfo, accessToken))
         val container = mediaSource.container ?: "mkv"
         val staticUrl = "$baseUrl/Videos/${item.id}/stream.$container?static=True"
-        val quality = mediaSource.name ?: "Video"
+        val quality = "Play: ${mediaSource.name ?: "Video"}"
         return listOf(Video(staticUrl, quality, staticUrl, headers = videoHeaders))
     }
 
