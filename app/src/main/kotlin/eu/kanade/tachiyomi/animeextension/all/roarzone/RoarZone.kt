@@ -200,23 +200,7 @@ class RoarZone : Source(), UnmeteredSource, ConfigurableAnimeSource {
         return parseItemsPage(url, page)
     }
 
-    override suspend fun getSearchAnime(page: Int, query: String, filters: AnimeFilterList): AnimesPage {
-        val startIndex = (page - 1) * 20
-        val url = getItemsUrl(startIndex).newBuilder().apply {
-            if (query.isNotBlank()) addQueryParameter("SearchTerm", query)
-            filters.forEach { filter ->
-                when (filter) {
-                    is CategoryFilter -> if (filter.toValue().isNotBlank()) setQueryParameter("ParentId", filter.toValue())
-                    is SortFilter -> {
-                        setQueryParameter("SortBy", filter.toSortValue())
-                        setQueryParameter("SortOrder", if (filter.isAscending()) "Ascending" else "Descending")
-                    }
-                    else -> {}
-                }
-            }
-        }.build()
-        return parseItemsPage(url, page)
-    }
+
 
     private suspend fun parseItemsPage(url: HttpUrl, page: Int): AnimesPage {
         val items = client.newCall(GET(url)).await().parseAs<ItemListDto>(json)
