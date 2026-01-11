@@ -126,7 +126,7 @@ fun String.getImageUrl(baseUrl: String, id: String): String = baseUrl.toHttpUrl(
 object PascalCaseToCamelCase : JsonNamingStrategy { override fun serialNameForJson(descriptor: SerialDescriptor, elementIndex: Int, serialName: String): String = serialName.replaceFirstChar { it.uppercase() } }
 fun getAuthHeader(deviceInfo: RoarZone.DeviceInfo, token: String? = null): String {
     val params = listOf("Client" to deviceInfo.clientName, "Version" to deviceInfo.version, "DeviceId" to deviceInfo.id, "Device" to deviceInfo.name, "Token" to token)
-    return params.filterNot { it.second == null }.joinToString(separator = ", ", prefix = "MediaBrowser ", transform = { "${it.first}=\"" + URLEncoder.encode(it.second!!.trim().replace("\n", " "), "UTF-8") + "\"" })
+    return params.filterNot { it.second == null }.joinToString(separator = ", ", prefix = "MediaBrowser ", transform = { "${it.first}=\"${it.second!!.trim().replace("\n", " ")}\"" })
 }
 
 class RoarZone : Source(), UnmeteredSource, ConfigurableAnimeSource {
