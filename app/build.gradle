@@ -12,8 +12,8 @@ android {
         applicationId = "eu.kanade.tachiyomi.animeextension.all.roarzone"
         minSdk = 21
         targetSdk = 34
-        versionCode = 1015
-        versionName = "14.1015"
+        versionCode = 1016
+        versionName = "14.1016"
 
         manifestPlaceholders = [
             appName: "RoarZone",
