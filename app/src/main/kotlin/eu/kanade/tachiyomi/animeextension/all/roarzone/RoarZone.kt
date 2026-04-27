@@ -140,7 +140,7 @@ class RoarZone : Source(), UnmeteredSource, ConfigurableAnimeSource {
     }
 
     override val baseUrl: String
-        get() = prefs.getString(PREF_BASE_URL, "https://play.roarzone.info")!!
+        get() = prefs.getString(PREF_BASE_URL, "https://play.roarzone.net")!!
 
     override val json = Json { isLenient = true; ignoreUnknownKeys = true; namingStrategy = PascalCaseToCamelCase }
     private val deviceInfo by lazy { getDeviceInfo(Injekt.get<Application>()) }
@@ -251,8 +251,8 @@ class RoarZone : Source(), UnmeteredSource, ConfigurableAnimeSource {
         EditTextPreference(screen.context).apply {
             key = PREF_BASE_URL
             title = "Base URL"
-            summary = "RoarZone Server URL (default: https://play.roarzone.info)"
-            setDefaultValue("https://play.roarzone.info")
+            summary = "RoarZone Server URL (default: https://play.roarzone.net)"
+            setDefaultValue("https://play.roarzone.net")
             setOnPreferenceChangeListener { _, newValue ->
                 try {
                     val newUrl = (newValue as String).trim()
